@@ -1,0 +1,43 @@
+from enum import Enum
+
+class PolicyStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    EXPIRED = "EXPIRED"
+    SUSPENDED = "SUSPENDED"
+    CANCELLED = "CANCELLED"
+
+class ClaimStatus(str, Enum):
+    RECEIVED = "RECEIVED"
+    VERIFYING = "VERIFYING"
+    ASSIGNED_TO_ADJUSTER = "ASSIGNED_TO_ADJUSTER"
+    UNDER_EVALUATION = "UNDER_EVALUATION"
+    FRAUD_FLAGGED = "FRAUD_FLAGGED"
+    PENDING_APPROVAL = "PENDING_APPROVAL"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    LIQUIDATED = "LIQUIDATED"
+
+class FraudRiskLevel(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+class ApprovalLevel(str, Enum):
+    JUNIOR_ANALYST = "JUNIOR_ANALYST"      # Max limit: $5,000
+    SENIOR_SUPERVISOR = "SENIOR_SUPERVISOR"  # Max limit: $25,000
+    EXECUTIVE_DIRECTOR = "EXECUTIVE_DIRECTOR" # Above $25,000
+
+class PolicyType(str, Enum):
+    AUTO = "AUTO"
+    HOME = "HOME"
+    COMMERCIAL = "COMMERCIAL"
+    HEALTH = "HEALTH"
+
+class UserRole(str, Enum):
+    ADMIN = "ADMIN"
+    ADJUSTER = "ADJUSTER"
+    ANALYST = "ANALYST"
+    DIRECTOR = "DIRECTOR"
+    CLIENT = "CLIENT"
+

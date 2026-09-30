@@ -2,7 +2,7 @@ from typing import List, Optional
 from datetime import date, datetime
 from app.domain.entities import Claim, DamageAssessment
 from app.domain.enums import ClaimStatus, FraudRiskLevel
-from app.domain.exceptions import ClaimNotFoundException, AdjusterNotFoundException
+from app.domain.exceptions import ClaimNotFoundException, AdjusterNotFoundException, InvalidIncidentDateException
 from app.application.interfaces.repository_interfaces import IClaimRepository, IPolicyRepository, IAdjusterRepository
 from app.application.use_cases.policy_use_cases import PolicyUseCases
 from app.application.use_cases.fraud_use_cases import FraudEngineUseCases
@@ -23,6 +23,15 @@ class ClaimUseCases:
         incident_location: str,
         claimed_amount: float
     ) -> Claim:
+        # Step 0: Validate incident date rules
+        today = date.today()
+        if incident_date > today:
+            raise InvalidIncidentDateException("La fecha de ocurrencia del siniestro no puede ser futura (posterior al día de hoy).")
+
+        days_ago = (today - incident_date).days
+        if days_ago > 365:
+            raise InvalidIncidentDateException("No se pueden registrar siniestros con una fecha de ocurrencia superior a 1 año (365 días).")
+
         # Step 1: Verify policy existence and active status
         policy = self.policy_use_cases.verify_policy_validity(policy_number, incident_date)
 

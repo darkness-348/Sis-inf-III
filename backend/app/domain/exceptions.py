@@ -18,6 +18,11 @@ class ClaimNotFoundException(DomainException):
     def __init__(self, claim_id: int):
         super().__init__(f"El siniestro con ID '{claim_id}' no existe.")
 
+class InvalidIncidentDateException(DomainException):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
 class AdjusterNotFoundException(DomainException):
     def __init__(self, adjuster_id: int):
         super().__init__(f"El perito con ID '{adjuster_id}' no fue encontrado.")

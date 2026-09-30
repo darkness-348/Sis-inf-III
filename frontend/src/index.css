@@ -1,32 +1,41 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  --bg-main: #0B1120;
-  --bg-card: rgba(15, 23, 42, 0.85);
-  --bg-card-hover: rgba(30, 41, 59, 0.9);
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-accent: rgba(37, 99, 235, 0.4);
+  /* DineroLi / Modern Fintech Theme Tokens */
+  --bg-main: #0A0B0E;
+  --bg-secondary: #12141A;
+  --bg-card: rgba(18, 20, 26, 0.75);
+  --bg-card-hover: rgba(26, 30, 40, 0.85);
+  --bg-card-solid: #151821;
+  --bg-cream: #FEFBEE;
   
-  --primary: #2563EB;
-  --primary-hover: #1D4ED8;
-  --secondary: #0284C7;
+  --primary: #236AFF;
+  --primary-hover: #1855D6;
+  --primary-glow: rgba(35, 106, 255, 0.35);
+  --accent-light: #B7CEFF;
+  --accent-soft: rgba(35, 106, 255, 0.12);
+  
+  --secondary: #6597FF;
   --success: #10B981;
   --warning: #F59E0B;
   --danger: #EF4444;
-  --info: #6366F1;
+  --info: #818CF8;
   
   --text-main: #F8FAFC;
   --text-muted: #94A3B8;
   --text-dim: #64748B;
   
-  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-card: rgba(255, 255, 255, 0.06);
+  --border-accent: rgba(35, 106, 255, 0.3);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 body {
@@ -35,76 +44,95 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(2, 132, 199, 0.08) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(15, 23, 42, 0.5) 0px, transparent 50%);
+    radial-gradient(at 15% 10%, rgba(35, 106, 255, 0.12) 0px, transparent 55%),
+    radial-gradient(at 85% 15%, rgba(101, 151, 255, 0.08) 0px, transparent 45%),
+    radial-gradient(at 50% 90%, rgba(18, 20, 26, 0.8) 0px, transparent 60%);
+  background-attachment: fixed;
 }
 
-/* Executive Panel Card */
+/* DineroLi Executive Glass Panel */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: var(--glass-border);
-  border-radius: 12px;
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.4);
-  transition: all 0.2s ease-in-out;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
-/* Badge System - Clean Corporate */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.725rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+/* DineroLi Feature / Number Card */
+.dineroli-stat-card {
+  background: linear-gradient(145deg, rgba(21, 24, 33, 0.7), rgba(15, 17, 23, 0.5));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.badge-received { background: rgba(37, 99, 235, 0.12); color: #60A5FA; border: 1px solid rgba(37, 99, 235, 0.3); }
-.badge-verifying { background: rgba(99, 102, 241, 0.12); color: #A5B4FC; border: 1px solid rgba(99, 102, 241, 0.3); }
-.badge-assigned { background: rgba(2, 132, 199, 0.12); color: #38BDF8; border: 1px solid rgba(2, 132, 199, 0.3); }
-.badge-evaluation { background: rgba(245, 158, 11, 0.12); color: #FCD34D; border: 1px solid rgba(245, 158, 11, 0.3); }
-.badge-fraud { background: rgba(239, 68, 68, 0.15); color: #FCA5A5; border: 1px solid rgba(239, 68, 68, 0.4); }
-.badge-pending { background: rgba(234, 179, 8, 0.12); color: #FDE047; border: 1px solid rgba(234, 179, 8, 0.3); }
-.badge-approved { background: rgba(16, 185, 129, 0.12); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.3); }
-.badge-liquidated { background: rgba(16, 185, 129, 0.22); color: #A7F3D0; border: 1px solid rgba(16, 185, 129, 0.45); }
+.dineroli-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(35, 106, 255, 0.4), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
 
-/* Buttons - Professional Corporate */
+.dineroli-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(35, 106, 255, 0.3);
+  box-shadow: 0 12px 30px -5px rgba(35, 106, 255, 0.15);
+}
+
+.dineroli-stat-card:hover::before {
+  opacity: 1;
+}
+
+/* DineroLi Pill Buttons */
 .btn-primary {
-  background: #2563EB;
+  background: #236AFF;
   color: #FFFFFF;
   border: none;
-  padding: 9px 18px;
-  border-radius: 8px;
+  padding: 10px 22px;
+  border-radius: 9999px;
   font-weight: 600;
   font-size: 0.85rem;
+  letter-spacing: 0.01em;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(35, 106, 255, 0.35);
 }
 
 .btn-primary:hover {
-  background: #1D4ED8;
+  background: #1855D6;
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(35, 106, 255, 0.45);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
 }
 
 .btn-secondary {
   background: rgba(255, 255, 255, 0.04);
   color: #E2E8F0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 9px 18px;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 20px;
+  border-radius: 9999px;
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
@@ -117,14 +145,16 @@ body {
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  transform: translateY(-1px);
 }
 
 .btn-danger {
   background: #DC2626;
   color: #FFFFFF;
   border: none;
-  padding: 9px 18px;
-  border-radius: 8px;
+  padding: 10px 20px;
+  border-radius: 9999px;
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
@@ -136,48 +166,79 @@ body {
 
 .btn-danger:hover {
   background: #B91C1C;
+  transform: translateY(-1px);
 }
 
-/* Executive Data Tables */
+/* Badge System */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge-received { background: rgba(35, 106, 255, 0.12); color: #6597FF; border: 1px solid rgba(35, 106, 255, 0.3); }
+.badge-verifying { background: rgba(99, 102, 241, 0.12); color: #A5B4FC; border: 1px solid rgba(99, 102, 241, 0.3); }
+.badge-assigned { background: rgba(14, 165, 233, 0.12); color: #38BDF8; border: 1px solid rgba(14, 165, 233, 0.3); }
+.badge-evaluation { background: rgba(245, 158, 11, 0.12); color: #FCD34D; border: 1px solid rgba(245, 158, 11, 0.3); }
+.badge-fraud { background: rgba(239, 68, 68, 0.15); color: #FCA5A5; border: 1px solid rgba(239, 68, 68, 0.4); }
+.badge-pending { background: rgba(234, 179, 8, 0.12); color: #FDE047; border: 1px solid rgba(234, 179, 8, 0.3); }
+.badge-approved { background: rgba(16, 185, 129, 0.12); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge-liquidated { background: rgba(16, 185, 129, 0.22); color: #A7F3D0; border: 1px solid rgba(16, 185, 129, 0.45); }
+
+/* Custom Modern Data Tables */
 .custom-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .custom-table th {
-  padding: 12px 16px;
+  padding: 14px 18px;
   color: #94A3B8;
-  font-size: 0.725rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 700;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(18, 20, 26, 0.6);
+}
+
+.custom-table th:first-child {
+  border-top-left-radius: 12px;
+}
+.custom-table th:last-child {
+  border-top-right-radius: 12px;
 }
 
 .custom-table td {
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   font-size: 0.875rem;
   color: #E2E8F0;
 }
 
 .custom-table tbody tr {
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .custom-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(35, 106, 255, 0.04);
 }
 
-/* Form Controls */
+/* Form Inputs */
 .form-input {
   width: 100%;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 10px 14px;
+  background: rgba(18, 20, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 11px 16px;
   color: #F8FAFC;
   font-size: 0.875rem;
   outline: none;
@@ -185,8 +246,9 @@ body {
 }
 
 .form-input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  border-color: #236AFF;
+  box-shadow: 0 0 0 3px rgba(35, 106, 255, 0.2);
+  background: rgba(18, 20, 26, 0.9);
 }
 
 .form-label {
@@ -197,9 +259,9 @@ body {
   margin-bottom: 6px;
 }
 
-/* Tabs Header */
+/* Tabs */
 .tab-button {
-  padding: 10px 18px;
+  padding: 10px 20px;
   font-size: 0.85rem;
   font-weight: 600;
   color: #94A3B8;
@@ -211,6 +273,7 @@ body {
   align-items: center;
   gap: 8px;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .tab-button:hover {
@@ -218,6 +281,28 @@ body {
 }
 
 .tab-button.active {
-  color: #60A5FA;
-  border-bottom-color: #2563EB;
+  color: #6597FF;
+  border-bottom-color: #236AFF;
+}
+
+/* Hero Banner & Quotes from DineroLi */
+.dineroli-banner {
+  background: linear-gradient(135deg, rgba(35, 106, 255, 0.12) 0%, rgba(18, 20, 26, 0.8) 100%);
+  border: 1px solid rgba(35, 106, 255, 0.2);
+  border-radius: 16px;
+  padding: 24px 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dineroli-banner::after {
+  content: '';
+  position: absolute;
+  right: -50px;
+  top: -50px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(35, 106, 255, 0.25) 0%, transparent 70%);
+  pointer-events: none;
 }

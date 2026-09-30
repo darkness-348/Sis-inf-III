@@ -25,6 +25,7 @@ export interface Policy {
   start_date: string;
   end_date: string;
   status: PolicyStatus;
+  bank_account_number?: string;
 }
 
 export interface Adjuster {
@@ -84,6 +85,8 @@ export interface Claim {
   adjuster_id?: number;
   fraud_risk_level: FraudRiskLevel;
   authorized_payment_amount?: number;
+  bank_account_number?: string;
+  liquidation_date?: string;
   assessment?: DamageAssessment;
   fraud_analysis?: FraudAnalysis;
   payment?: PaymentAuthorization;

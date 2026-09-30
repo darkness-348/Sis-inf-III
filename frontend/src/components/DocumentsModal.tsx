@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { FileCheck, X, Upload, CheckCircle, AlertTriangle, FileText, Trash2 } from 'lucide-react';
 import type { Claim } from '../types/claims';
 
@@ -58,7 +58,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
     setFileName('');
 
     if (!isFormatValid || !isSizeValid) {
-      setNotificationMsg('Archivo rechazado: Formato no permitido o tamaño superior al límite de 5 MB.');
+      setNotificationMsg('Archivo rechazado: Formato no permitido o tamaño superior alímite de 5 MB.');
     } else {
       setNotificationMsg('Documento adjuntado y validado correctamente.');
     }
@@ -126,7 +126,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="form-label">Tamaño (KB)</label>
+              <label className="form-label">tamaño (KB)</label>
               <input
                 type="number"
                 className="form-input"
@@ -149,7 +149,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
               <tr>
                 <th>Documento</th>
                 <th>Formato</th>
-                <th>Tamaño</th>
+                <th>tamaño</th>
                 <th>Estado Validación</th>
                 <th>Acción</th>
               </tr>

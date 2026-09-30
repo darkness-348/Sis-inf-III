@@ -10,8 +10,8 @@ import json
 
 def seed_database():
     engine.dispose()
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.drop_all(bind=engine, checkfirst=True)
+    Base.metadata.create_all(bind=engine, checkfirst=True)
     db = SessionLocal()
 
     try:
@@ -32,6 +32,14 @@ def seed_database():
             role=UserRole.ADMIN,
             is_active=True
         )
+        u5 = UserModel(
+            username="admin_susann",
+            email="susann@upds.edu.bo",
+            hashed_password=hash_password("password123"),
+            full_name="Lic. Susann Baldiviezo (Admin)",
+            role=UserRole.ADMIN,
+            is_active=True
+        )
         u3 = UserModel(
             username="juan_cliente",
             email="juan.perez@email.com",
@@ -40,7 +48,15 @@ def seed_database():
             role=UserRole.CLIENT,
             is_active=True
         )
-        db.add_all([u1, u2, u3])
+        u4 = UserModel(
+            username="juan_perez",
+            email="juan.perez2@email.com",
+            hashed_password=hash_password("password123"),
+            full_name="Juan Pérez (Cliente)",
+            role=UserRole.CLIENT,
+            is_active=True
+        )
+        db.add_all([u1, u2, u3, u4, u5])
         db.commit()
 
         print("Seeding policies...")
@@ -52,7 +68,8 @@ def seed_database():
             coverage_amount=35000.0,
             start_date=date(2026, 1, 15),
             end_date=date(2027, 1, 15),
-            status=PolicyStatus.ACTIVE
+            status=PolicyStatus.ACTIVE,
+            bank_account_number="CTA-BNC-88019482"
         )
         p2 = PolicyModel(
             policy_number="POL-2026-8802",
@@ -62,7 +79,8 @@ def seed_database():
             coverage_amount=150000.0,
             start_date=date(2026, 3, 1),
             end_date=date(2027, 3, 1),
-            status=PolicyStatus.ACTIVE
+            status=PolicyStatus.ACTIVE,
+            bank_account_number="CTA-BNC-44091238"
         )
         p3 = PolicyModel(
             policy_number="POL-2026-8803",
@@ -72,7 +90,8 @@ def seed_database():
             coverage_amount=500000.0,
             start_date=date(2026, 2, 10),
             end_date=date(2027, 2, 10),
-            status=PolicyStatus.ACTIVE
+            status=PolicyStatus.ACTIVE,
+            bank_account_number="CTA-BNC-99102938"
         )
         p4 = PolicyModel(
             policy_number="POL-2025-4100",
@@ -82,7 +101,8 @@ def seed_database():
             coverage_amount=20000.0,
             start_date=date(2025, 1, 1),
             end_date=date(2025, 12, 31),
-            status=PolicyStatus.EXPIRED
+            status=PolicyStatus.EXPIRED,
+            bank_account_number="CTA-BNC-11029384"
         )
 
         db.add_all([p1, p2, p3, p4])
@@ -128,7 +148,9 @@ def seed_database():
             created_at=datetime(2026, 5, 13, 10, 30),
             adjuster_id=a1.id,
             fraud_risk_level=FraudRiskLevel.LOW,
-            authorized_payment_amount=2200.0
+            authorized_payment_amount=2200.0,
+            bank_account_number="CTA-BNC-88019482",
+            liquidation_date=datetime(2026, 5, 15, 11, 30)
         )
         db.add(c1)
         db.commit()
@@ -158,7 +180,7 @@ def seed_database():
             authorized_by="Lic. Carlos Analyst",
             status="PAID",
             authorization_date=datetime(2026, 5, 15, 11, 0),
-            notes="Pago acreditado exitosamente a la cuenta bancaria del asegurado."
+            notes="Cancelado la cantidad de $2,200.00 USD al número de cuenta CTA-BNC-88019482 y la fecha de liquidación 15/05/2026 11:30."
         )
         db.add_all([d1, f1, pay1])
 

@@ -41,6 +41,11 @@ class PolicyResponse(BaseModel):
     start_date: date
     end_date: date
     status: PolicyStatus
+    bank_account_number: Optional[str] = None
+
+class LiquidateClaimRequest(BaseModel):
+    bank_account_number: Optional[str] = Field(None, example="CTA-BNC-88019482")
+    authorized_by: Optional[str] = Field(None, example="Lic. Carlos Analyst")
 
 # Adjuster DTOs
 class AdjusterResponse(BaseModel):
@@ -118,6 +123,8 @@ class ClaimResponse(BaseModel):
     adjuster_id: Optional[int] = None
     fraud_risk_level: FraudRiskLevel
     authorized_payment_amount: Optional[float] = None
+    bank_account_number: Optional[str] = None
+    liquidation_date: Optional[datetime] = None
     assessment: Optional[DamageAssessmentResponse] = None
     fraud_analysis: Optional[FraudAnalysisResponse] = None
     payment: Optional[PaymentAuthorizationResponse] = None

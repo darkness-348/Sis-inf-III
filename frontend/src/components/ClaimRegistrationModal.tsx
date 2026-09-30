@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, X, AlertCircle } from 'lucide-react';
+import { PlusCircle, X, AlertCircle, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { claimsService } from '../services/claimsService';
 
 interface ClaimRegistrationModalProps {
@@ -15,8 +15,13 @@ export const ClaimRegistrationModal: React.FC<ClaimRegistrationModalProps> = ({
   prefilledPolicyNumber = '',
   onSuccess,
 }) => {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const minDateStr = oneYearAgo.toISOString().split('T')[0];
+
   const [policyNumber, setPolicyNumber] = useState(prefilledPolicyNumber);
-  const [incidentDate, setIncidentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [incidentDate, setIncidentDate] = useState(todayStr);
   const [incidentDescription, setIncidentDescription] = useState('');
   const [incidentLocation, setIncidentLocation] = useState('');
   const [claimedAmount, setClaimedAmount] = useState<number | ''>(5000);
@@ -31,10 +36,47 @@ export const ClaimRegistrationModal: React.FC<ClaimRegistrationModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Date validation check
+  const getDateValidationStatus = (dateStr: string) => {
+    if (!dateStr) return { isValid: true, message: null, isWarning: false };
+    if (dateStr > todayStr) {
+      return {
+        isValid: false,
+        message: 'La fecha del siniestro no puede ser futura. Seleccione la fecha de hoy o una fecha pasada.',
+        isWarning: false,
+      };
+    }
+    if (dateStr < minDateStr) {
+      return {
+        isValid: false,
+        message: 'No se pueden registrar siniestros con una antigüedad superior a 1 año (365 días).',
+        isWarning: false,
+      };
+    }
+    const selectedTime = new Date(dateStr + 'T00:00:00').getTime();
+    const todayTime = new Date(todayStr + 'T00:00:00').getTime();
+    const diffDays = Math.floor((todayTime - selectedTime) / (1000 * 60 * 60 * 24));
+    if (diffDays > 60) {
+      return {
+        isValid: true,
+        message: `⚠️ Atención: El siniestro ocurrió hace ${diffDays} días. Al registrarlo, el sistema lo marcará automáticamente con un FLAG (Sospecha / Revisión por reporte extemporáneo).`,
+        isWarning: true,
+      };
+    }
+    return { isValid: true, message: null, isWarning: false };
+  };
+
+  const dateStatus = getDateValidationStatus(incidentDate);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!policyNumber || !incidentDate || !incidentDescription || !incidentLocation || !claimedAmount) {
       setError('Por favor complete todos los campos obligatorios.');
+      return;
+    }
+
+    if (!dateStatus.isValid) {
+      setError(dateStatus.message);
       return;
     }
 
@@ -97,6 +139,8 @@ export const ClaimRegistrationModal: React.FC<ClaimRegistrationModalProps> = ({
               <input
                 type="date"
                 className="form-input"
+                max={todayStr}
+                min={minDateStr}
                 value={incidentDate}
                 onChange={(e) => setIncidentDate(e.target.value)}
                 required
@@ -114,6 +158,31 @@ export const ClaimRegistrationModal: React.FC<ClaimRegistrationModalProps> = ({
               />
             </div>
           </div>
+
+          {/* Date validation message / warning */}
+          {dateStatus.message && (
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: dateStatus.isWarning ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                border: dateStatus.isWarning ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                color: dateStatus.isWarning ? '#FCD34D' : '#FCA5A5',
+              }}
+            >
+              {dateStatus.isWarning ? (
+                <ShieldAlert style={{ width: '18px', height: '18px', flexShrink: 0, color: '#FCD34D' }} />
+              ) : (
+                <AlertTriangle style={{ width: '18px', height: '18px', flexShrink: 0, color: '#FCA5A5' }} />
+              )}
+              <span>{dateStatus.message}</span>
+            </div>
+          )}
 
           <div>
             <label className="form-label">Lugar de Ocurrencia *</label>
@@ -143,7 +212,7 @@ export const ClaimRegistrationModal: React.FC<ClaimRegistrationModalProps> = ({
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancelar
             </button>
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading || !dateStatus.isValid}>
               <span>{loading ? 'Registrando...' : 'Registrar Siniestro'}</span>
             </button>
           </div>

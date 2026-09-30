@@ -9,6 +9,7 @@ from app.infrastructure.database import Base, engine, SessionLocal
 
 @pytest.fixture(autouse=True)
 def setup_db():
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)

@@ -72,6 +72,20 @@ class FraudEngineUseCases:
                 details=f"Monto reclamado: ${claim.claimed_amount:,.2f}."
             ))
 
+        # Rule 5: Incident date is old (> 60 days prior to registration) (+45 pts - triggers FLAG)
+        today = date.today()
+        days_elapsed = (today - claim.incident_date).days
+        if days_elapsed > 60:
+            score = 45
+            total_score += score
+            rules_evaluated.append(FraudRuleResult(
+                rule_code="R05_LATE_REPORTING",
+                rule_name="Reporte Extemporáneo / Fecha Antigua (> 60 días)",
+                score_impact=score,
+                is_triggered=True,
+                details=f"El siniestro ocurrió hace {days_elapsed} días (reporte extemporáneo con fecha antigua marcado como FLAG)."
+            ))
+
         # Determine Risk Level
         if total_score >= 65:
             risk_level = FraudRiskLevel.CRITICAL

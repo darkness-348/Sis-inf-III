@@ -101,9 +101,10 @@ export interface DashboardMetrics {
 }
 
 export interface ClaimCreatePayload {
-  policy_number: string;
+  policy_number?: string;
   incident_date: string;
   incident_description: string;
   incident_location: string;
   claimed_amount: number;
+  bank_account_number?: string;
 }

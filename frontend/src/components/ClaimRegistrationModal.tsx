@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, X, AlertCircle, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { claimsService } from '../services/claimsService';
+import type { Policy } from '../types/claims';
 
 interface ClaimRegistrationModalProps {
   isOpen: boolean;
@@ -20,7 +21,9 @@ export const ClaimRegistrationModal: React.FC<ClaimRegistrationModalProps> = ({
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
   const minDateStr = oneYearAgo.toISOString().split('T')[0];
 
+  const [policies, setPolicies] = useState<Policy[]>([]);
   const [policyNumber, setPolicyNumber] = useState(prefilledPolicyNumber);
+  const [bankAccount, setBankAccount] = useState('CTA-BNC-88019482');
   const [incidentDate, setIncidentDate] = useState(todayStr);
   const [incidentDescription, setIncidentDescription] = useState('');
   const [incidentLocation, setIncidentLocation] = useState('');
@@ -29,12 +32,35 @@ export const ClaimRegistrationModal: React.FC<ClaimRegistrationModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (prefilledPolicyNumber) {
-      setPolicyNumber(prefilledPolicyNumber);
+    if (isOpen) {
+      claimsService.getPolicies().then((fetched) => {
+        setPolicies(fetched);
+        const active = fetched.filter((p) => p.status === 'ACTIVE');
+        if (prefilledPolicyNumber) {
+          setPolicyNumber(prefilledPolicyNumber);
+          const found = fetched.find((p) => p.policy_number === prefilledPolicyNumber);
+          if (found && found.bank_account_number) {
+            setBankAccount(found.bank_account_number);
+          }
+        } else if (active.length > 0 && !policyNumber) {
+          setPolicyNumber(active[0].policy_number);
+          if (active[0].bank_account_number) {
+            setBankAccount(active[0].bank_account_number);
+          }
+        }
+      }).catch(console.error);
     }
-  }, [prefilledPolicyNumber]);
+  }, [isOpen, prefilledPolicyNumber]);
 
   if (!isOpen) return null;
+
+  const handlePolicyChange = (selectedNum: string) => {
+    setPolicyNumber(selectedNum);
+    const found = policies.find((p) => p.policy_number === selectedNum);
+    if (found && found.bank_account_number) {
+      setBankAccount(found.bank_account_number);
+    }
+  };
 
   // Date validation check
   const getDateValidationStatus = (dateStr: string) => {
@@ -90,6 +116,7 @@ export const ClaimRegistrationModal: React.FC<ClaimRegistrationModalProps> = ({
         incident_description: incidentDescription.trim(),
         incident_location: incidentLocation.trim(),
         claimed_amount: Number(claimedAmount),
+        bank_account_number: bankAccount.trim(),
       });
       onSuccess();
       onClose();
@@ -122,15 +149,45 @@ export const ClaimRegistrationModal: React.FC<ClaimRegistrationModalProps> = ({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label className="form-label">Número de Póliza Vigente *</label>
+            <label className="form-label">Seleccionar Póliza Activa (Asignación Automática) *</label>
+            {policies.length > 0 ? (
+              <select
+                className="form-input"
+                value={policyNumber}
+                onChange={(e) => handlePolicyChange(e.target.value)}
+                required
+              >
+                {policies.map((p) => (
+                  <option key={p.id} value={p.policy_number}>
+                    {p.policy_number} — {p.insured_name} ({p.policy_type}) — Cobertura: ${p.coverage_amount.toLocaleString()} USD
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Ej: POL-2026-8801"
+                value={policyNumber}
+                onChange={(e) => setPolicyNumber(e.target.value)}
+                required
+              />
+            )}
+          </div>
+
+          <div>
+            <label className="form-label">Número de Cuenta Bancaria (para Acreditación / Liquidación) *</label>
             <input
               type="text"
               className="form-input"
-              placeholder="Ej: POL-2026-8801"
-              value={policyNumber}
-              onChange={(e) => setPolicyNumber(e.target.value)}
+              placeholder="Ej: CTA-BNC-88019482"
+              value={bankAccount}
+              onChange={(e) => setBankAccount(e.target.value)}
               required
             />
+            <span style={{ fontSize: '0.725rem', color: '#64748B', marginTop: '4px', display: 'block' }}>
+              Esta cuenta se guardará en el expediente y será utilizada para efectuar el pago al autorizar la liquidación.
+            </span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -221,3 +278,4 @@ export const ClaimRegistrationModal: React.FC<ClaimRegistrationModalProps> = ({
     </div>
   );
 };
+

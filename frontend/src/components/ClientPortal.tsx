@@ -4,7 +4,7 @@ import {
   CheckCircle2, Clock, Calendar, MapPin, DollarSign,
   UserCheck, ArrowRight, RefreshCw, FileText
 } from 'lucide-react';
-import type { Claim } from '../types/claims';
+import type { Claim, Policy } from '../types/claims';
 import { claimsService } from '../services/claimsService';
 import { getClaimStatusLabel, getClaimStatusBadgeClass, formatCurrency } from '../utils/formatters';
 
@@ -43,8 +43,10 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
   const minDateStr = oneYearAgo.toISOString().split('T')[0];
 
-  // New Claim Form state
-  const [policyNumber, setPolicyNumber] = useState('POL-2026-8801');
+  // Available Policies and New Claim Form state
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [policyNumber, setPolicyNumber] = useState('');
+  const [bankAccount, setBankAccount] = useState('CTA-BNC-88019482');
   const [incidentDate, setIncidentDate] = useState(todayStr);
   const [incidentLocation, setIncidentLocation] = useState('');
   const [incidentDescription, setIncidentDescription] = useState('');
@@ -53,6 +55,27 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    claimsService.getPolicies().then((fetched) => {
+      setPolicies(fetched);
+      const active = fetched.filter((p) => p.status === 'ACTIVE');
+      if (active.length > 0 && !policyNumber) {
+        setPolicyNumber(active[0].policy_number);
+        if (active[0].bank_account_number) {
+          setBankAccount(active[0].bank_account_number);
+        }
+      }
+    }).catch(console.error);
+  }, []);
+
+  const handlePolicyChange = (selectedNum: string) => {
+    setPolicyNumber(selectedNum);
+    const found = policies.find((p) => p.policy_number === selectedNum);
+    if (found && found.bank_account_number) {
+      setBankAccount(found.bank_account_number);
+    }
+  };
 
   // Date validation check helper
   const getDateValidationStatus = (dateStr: string) => {
@@ -123,6 +146,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
         incident_description: incidentDescription.trim(),
         incident_location: incidentLocation.trim(),
         claimed_amount: Number(claimedAmount),
+        bank_account_number: bankAccount.trim(),
       });
 
       setSuccessMessage(`¡Siniestro reportado con éxito! Se ha creado el Expediente Nº ${newClaim.claim_number}.`);
@@ -618,17 +642,44 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
           <form onSubmit={handleReportClaim} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
             <div>
-              <label className="form-label">Número de Póliza Vigente *</label>
+              <label className="form-label">Seleccionar Póliza Activa (Asignación Automática) *</label>
+              {policies.length > 0 ? (
+                <select
+                  className="form-input"
+                  value={policyNumber}
+                  onChange={(e) => handlePolicyChange(e.target.value)}
+                  required
+                >
+                  {policies.map((p) => (
+                    <option key={p.id} value={p.policy_number}>
+                      {p.policy_number} — {p.insured_name} ({p.policy_type}) — Cobertura: ${p.coverage_amount.toLocaleString()} USD
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Ej: POL-2026-8801"
+                  value={policyNumber}
+                  onChange={(e) => setPolicyNumber(e.target.value)}
+                  required
+                />
+              )}
+            </div>
+
+            <div>
+              <label className="form-label">Número de Cuenta Bancaria del Asegurado (Liquidación) *</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="Ej: POL-2026-8801"
-                value={policyNumber}
-                onChange={(e) => setPolicyNumber(e.target.value)}
+                placeholder="Ej: CTA-BNC-88019482"
+                value={bankAccount}
+                onChange={(e) => setBankAccount(e.target.value)}
                 required
               />
               <span style={{ fontSize: '0.725rem', color: '#64748B', marginTop: '4px', display: 'block' }}>
-                Pólizas demo activas: POL-2026-8801 (Juan Pérez Auto), POL-2026-8802 (María Hogar), POL-2026-8803 (Comercial).
+                Esta cuenta se registrará en el expediente para la transferencia/liquidación al autorizar el pago.
               </span>
             </div>
 

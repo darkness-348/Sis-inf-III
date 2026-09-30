@@ -59,11 +59,12 @@ class AdjusterResponse(BaseModel):
 
 # Claim Registration DTO
 class ClaimCreateRequest(BaseModel):
-    policy_number: str = Field(..., example="POL-2026-8801")
+    policy_number: Optional[str] = Field(None, example="POL-2026-8801")
     incident_date: date = Field(..., example="2026-09-20")
     incident_description: str = Field(..., example="Colisión frontal en intersección con daños en parachoques y motor.")
     incident_location: str = Field(..., example="Av. Las Américas 104, Ciudad")
     claimed_amount: float = Field(..., example=12500.0)
+    bank_account_number: Optional[str] = Field(None, example="CTA-BNC-88019482")
 
 class AssignAdjusterRequest(BaseModel):
     adjuster_id: int

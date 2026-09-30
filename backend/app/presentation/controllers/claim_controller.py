@@ -78,7 +78,8 @@ def register_claim(req: ClaimCreateRequest, use_cases: ClaimUseCases = Depends(g
             incident_date=req.incident_date,
             incident_description=req.incident_description,
             incident_location=req.incident_location,
-            claimed_amount=req.claimed_amount
+            claimed_amount=req.claimed_amount,
+            bank_account_number=req.bank_account_number
         )
     except DomainException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

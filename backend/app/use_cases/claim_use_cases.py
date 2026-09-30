@@ -17,14 +17,24 @@ class ClaimUseCases:
 
     def register_claim(
         self,
-        policy_number: str,
+        policy_number: Optional[str],
         incident_date: date,
         incident_description: str,
         incident_location: str,
-        claimed_amount: float
+        claimed_amount: float,
+        bank_account_number: Optional[str] = None
     ) -> Claim:
 
-        policy = self.policy_use_cases.verify_policy_validity(policy_number, incident_date)
+        if policy_number and policy_number.strip():
+            policy = self.policy_use_cases.verify_policy_validity(policy_number.strip(), incident_date)
+        else:
+            all_policies = self.policy_repo.get_all()
+            active_policies = [p for p in all_policies if getattr(p.status, 'value', p.status) == "ACTIVE"]
+            if not active_policies:
+                raise PolicyNotFoundException("No hay ninguna póliza activa registrada para asignar al siniestro.")
+            policy = active_policies[0]
+
+        acct_num = bank_account_number.strip() if (bank_account_number and bank_account_number.strip()) else (policy.bank_account_number or "CTA-BNC-88019482")
 
         claim_count = len(self.claim_repo.get_all()) + 1
         claim_number = f"SIN-{datetime.now().year}-{claim_count:04d}"
@@ -39,7 +49,8 @@ class ClaimUseCases:
             incident_location=incident_location,
             claimed_amount=claimed_amount,
             status=ClaimStatus.RECEIVED,
-            created_at=datetime.now()
+            created_at=datetime.now(),
+            bank_account_number=acct_num
         )
 
         saved_claim = self.claim_repo.save(claim)

@@ -1,8 +1,8 @@
 from typing import List, Optional
 from datetime import date, datetime
 from app.domain.entities import Claim, DamageAssessment
-from app.domain.enums import ClaimStatus, FraudRiskLevel
-from app.domain.exceptions import ClaimNotFoundException, AdjusterNotFoundException, InvalidIncidentDateException
+from app.domain.enums import ClaimStatus, FraudRiskLevel, PolicyStatus
+from app.domain.exceptions import ClaimNotFoundException, AdjusterNotFoundException, InvalidIncidentDateException, PolicyNotFoundException
 from app.application.interfaces.repository_interfaces import IClaimRepository, IPolicyRepository, IAdjusterRepository
 from app.application.use_cases.policy_use_cases import PolicyUseCases
 from app.application.use_cases.fraud_use_cases import FraudEngineUseCases

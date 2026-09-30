@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { ClaimsList } from './components/ClaimsList';
 import { ClientPortal } from './components/ClientPortal';
+import { PoliciesList } from './components/PoliciesList';
 import { PolicyVerificationModal } from './components/PolicyVerificationModal';
 import { ClaimRegistrationModal } from './components/ClaimRegistrationModal';
 import { ClaimDetailModal } from './components/ClaimDetailModal';
@@ -927,6 +928,10 @@ export const App: React.FC = () => {
                           onOpenDocuments={handleOpenDocumentsForClaim}
                           currentUser={currentUser}
                         />
+                      )}
+
+                      {activeTab === 'policies' && (
+                        <PoliciesList onRefresh={fetchData} />
                       )}
 
                       {activeTab === 'dashboard' && !isAdjuster && (

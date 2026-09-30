@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { FileCheck, X, Upload, CheckCircle, AlertTriangle, FileText, Trash2 } from 'lucide-react';
 import type { Claim } from '../types/claims';
 
@@ -9,13 +9,15 @@ interface DocumentsModalProps {
   onRefresh?: () => void;
 }
 
+export type DocValidationStatus = 'VALIDATED' | 'PENDING' | 'REJECTED';
+
 interface AttachedDoc {
   id: string;
   name: string;
   sizeKb: number;
   format: string;
   uploadDate: string;
-  isValid: boolean;
+  validationStatus: DocValidationStatus;
 }
 
 export const DocumentsModal: React.FC<DocumentsModalProps> = ({
@@ -24,8 +26,9 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
   onClose,
 }) => {
   const [docs, setDocs] = useState<AttachedDoc[]>([
-    { id: '1', name: 'Informe_Policial_Accidente.pdf', sizeKb: 1024, format: 'PDF', uploadDate: '2026-09-21', isValid: true },
-    { id: '2', name: 'Fotografias_Danio_Vehiculo.jpg', sizeKb: 2048, format: 'JPG', uploadDate: '2026-09-21', isValid: true },
+    { id: '1', name: 'Informe_Policial_Accidente.pdf', sizeKb: 1024, format: 'PDF', uploadDate: '2026-09-21', validationStatus: 'VALIDATED' },
+    { id: '2', name: 'Fotografias_Danio_Vehiculo.jpg', sizeKb: 2048, format: 'JPG', uploadDate: '2026-09-21', validationStatus: 'VALIDATED' },
+    { id: '3', name: 'Factura_Taller_Reparacion.pdf', sizeKb: 1540, format: 'PDF', uploadDate: '2026-09-22', validationStatus: 'PENDING' },
   ]);
 
   const [fileName, setFileName] = useState('');
@@ -40,10 +43,12 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
     e.preventDefault();
     if (!fileName.trim()) return;
 
-    // Validation: format PDF, JPG, PNG and max size 5000 KB (5MB)
+    // Validation: format PDF, JPG, PNG, DOCX and max size 5000 KB (5MB)
     const validFormats = ['PDF', 'JPG', 'PNG', 'DOCX'];
     const isFormatValid = validFormats.includes(fileFormat.toUpperCase());
     const isSizeValid = fileSizeKb <= 5000;
+
+    const initialStatus: DocValidationStatus = (isFormatValid && isSizeValid) ? 'VALIDATED' : 'REJECTED';
 
     const newDoc: AttachedDoc = {
       id: Date.now().toString(),
@@ -51,17 +56,28 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
       sizeKb: fileSizeKb,
       format: fileFormat.toUpperCase(),
       uploadDate: new Date().toISOString().split('T')[0],
-      isValid: isFormatValid && isSizeValid,
+      validationStatus: initialStatus,
     };
 
     setDocs([...docs, newDoc]);
     setFileName('');
 
     if (!isFormatValid || !isSizeValid) {
-      setNotificationMsg('Archivo rechazado: Formato no permitido o tamaño superior alímite de 5 MB.');
+      setNotificationMsg('Archivo observado: Formato no permitido o tamaño superior al límite de 5 MB (se registró como RECHAZADO).');
     } else {
       setNotificationMsg('Documento adjuntado y validado correctamente.');
     }
+  };
+
+  const handleUpdateStatus = (id: string, newStatus: DocValidationStatus) => {
+    setDocs(docs.map(d => d.id === id ? { ...d, validationStatus: newStatus } : d));
+    const targetDoc = docs.find(d => d.id === id);
+    const statusLabels: Record<DocValidationStatus, string> = {
+      VALIDATED: 'VALIDADO',
+      PENDING: 'EN REVISIÓN',
+      REJECTED: 'RECHAZADO',
+    };
+    setNotificationMsg(`Estado del documento '${targetDoc?.name || id}' actualizado a ${statusLabels[newStatus]}.`);
   };
 
   const handleRemoveDoc = (id: string) => {
@@ -75,14 +91,14 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '750px', maxHeight: '90vh', overflowY: 'auto', padding: '28px', background: '#0F172A', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '780px', maxHeight: '90vh', overflowY: 'auto', padding: '28px', background: '#0F172A', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
         
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <FileCheck style={{ width: '22px', height: '22px', color: '#2563EB' }} />
             <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'white' }}>Gestión de Documentación (RF-02 / RF-08)</h3>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'white' }}>Gestión de Documentación y Validación (RF-02 / RF-08)</h3>
               <p style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Siniestro #{claim.claim_number} | Póliza: {claim.policy_number}</p>
             </div>
           </div>
@@ -122,11 +138,12 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
                 <option value="PDF">PDF</option>
                 <option value="JPG">JPG</option>
                 <option value="PNG">PNG</option>
+                <option value="DOCX">DOCX</option>
                 <option value="EXE">EXE (No permitido)</option>
               </select>
             </div>
             <div>
-              <label className="form-label">tamaño (KB)</label>
+              <label className="form-label">Tamaño (KB)</label>
               <input
                 type="number"
                 className="form-input"
@@ -143,43 +160,64 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
 
         {/* Document List */}
         <div style={{ marginBottom: '24px' }}>
-          <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#E2E8F0', marginBottom: '12px' }}>Documentos Anexados</h4>
-          <table className="custom-table">
+          <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#E2E8F0', marginBottom: '12px' }}>Documentos Anexados y Estado de Validación</h4>
+          <table className="custom-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr>
-                <th>Documento</th>
-                <th>Formato</th>
-                <th>tamaño</th>
-                <th>Estado Validación</th>
-                <th>Acción</th>
+              <tr style={{ background: 'rgba(30, 41, 59, 0.8)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: '#94A3B8', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                <th style={{ padding: '10px 14px', textAlign: 'left' }}>Documento</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' }}>Formato</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' }}>Tamaño</th>
+                <th style={{ padding: '10px 14px', textAlign: 'left' }}>Estado Validación</th>
+                <th style={{ padding: '10px 14px', textAlign: 'center' }}>Acción</th>
               </tr>
             </thead>
             <tbody>
               {docs.map((d) => (
-                <tr key={d.id}>
-                  <td>
+                <tr key={d.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.85rem' }}>
+                  <td style={{ padding: '12px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FileText style={{ width: '16px', height: '16px', color: '#94A3B8' }} />
-                      <span style={{ fontWeight: 600 }}>{d.name}</span>
+                      <FileText style={{ width: '16px', height: '16px', color: '#60A5FA' }} />
+                      <span style={{ fontWeight: 600, color: '#F8FAFC' }}>{d.name}</span>
                     </div>
                   </td>
-                  <td>{d.format}</td>
-                  <td>{(d.sizeKb / 1024).toFixed(2)} MB</td>
-                  <td>
-                    {d.isValid ? (
-                      <span style={{ color: '#34D399', fontSize: '0.775rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <CheckCircle style={{ width: '14px', height: '14px' }} />
-                        VALIDADO
-                      </span>
-                    ) : (
-                      <span style={{ color: '#FCA5A5', fontSize: '0.775rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <AlertTriangle style={{ width: '14px', height: '14px' }} />
-                        NO VÁLIDO
-                      </span>
-                    )}
+                  <td style={{ padding: '12px 14px', color: '#CBD5E1' }}>{d.format}</td>
+                  <td style={{ padding: '12px 14px', color: '#CBD5E1' }}>{(d.sizeKb / 1024).toFixed(2)} MB</td>
+                  <td style={{ padding: '12px 14px' }}>
+                    {/* Interactive Dropdown Selector to change validation status */}
+                    <select
+                      value={d.validationStatus}
+                      onChange={(e) => handleUpdateStatus(d.id, e.target.value as DocValidationStatus)}
+                      className="form-input"
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.775rem',
+                        fontWeight: 700,
+                        borderRadius: '6px',
+                        background: d.validationStatus === 'VALIDATED' 
+                          ? 'rgba(16, 185, 129, 0.2)' 
+                          : d.validationStatus === 'REJECTED' 
+                          ? 'rgba(239, 68, 68, 0.2)' 
+                          : 'rgba(245, 158, 11, 0.2)',
+                        color: d.validationStatus === 'VALIDATED' 
+                          ? '#34D399' 
+                          : d.validationStatus === 'REJECTED' 
+                          ? '#FCA5A5' 
+                          : '#FCD34D',
+                        border: d.validationStatus === 'VALIDATED' 
+                          ? '1px solid rgba(16, 185, 129, 0.4)' 
+                          : d.validationStatus === 'REJECTED' 
+                          ? '1px solid rgba(239, 68, 68, 0.4)' 
+                          : '1px solid rgba(245, 158, 11, 0.4)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value="VALIDATED" style={{ background: '#0F172A', color: '#34D399' }}>✅ VALIDADO</option>
+                      <option value="PENDING" style={{ background: '#0F172A', color: '#FCD34D' }}>⚠️ EN REVISIÓN</option>
+                      <option value="REJECTED" style={{ background: '#0F172A', color: '#FCA5A5' }}>❌ RECHAZADO</option>
+                    </select>
                   </td>
-                  <td>
-                    <button onClick={() => handleRemoveDoc(d.id)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}>
+                  <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                    <button onClick={() => handleRemoveDoc(d.id)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }} title="Eliminar documento">
                       <Trash2 style={{ width: '16px', height: '16px' }} />
                     </button>
                   </td>

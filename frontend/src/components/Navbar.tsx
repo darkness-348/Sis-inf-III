@@ -1,8 +1,8 @@
-﻿import React from 'react';
+import React from 'react';
 import { 
   Shield, RefreshCw, LayoutDashboard, FileText, Search, 
   ShieldAlert, DollarSign, FolderCheck, UserCheck, LogOut, 
-  User, PlusCircle, Clock 
+  User, PlusCircle, Clock, ShieldCheck 
 } from 'lucide-react';
 import { getUserRoleLabel } from '../utils/formatters';
 
@@ -248,6 +248,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <FileText style={{ width: '14px', height: '14px' }} />
               <span>Gestión de Siniestros</span>
+            </button>
+
+            <button 
+              onClick={() => onTabChange('policies')} 
+              className="btn-secondary"
+              style={{ 
+                borderRadius: '9999px',
+                padding: '8px 16px',
+                fontSize: '0.8rem',
+                background: activeTab === 'policies' ? '#236AFF' : 'transparent',
+                borderColor: activeTab === 'policies' ? '#236AFF' : 'rgba(255, 255, 255, 0.06)',
+                color: activeTab === 'policies' ? '#FFFFFF' : '#94A3B8'
+              }}
+            >
+              <ShieldCheck style={{ width: '14px', height: '14px' }} />
+              <span>Gestión de Pólizas</span>
             </button>
 
             <button 

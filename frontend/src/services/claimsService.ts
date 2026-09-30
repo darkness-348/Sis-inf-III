@@ -1,7 +1,7 @@
 import api from './api';
 import type { 
   Claim, Policy, Adjuster, DashboardMetrics, ClaimCreatePayload, 
-  FraudAnalysis, PaymentAuthorization 
+  PolicyCreatePayload, FraudAnalysis, PaymentAuthorization 
 } from '../types/claims';
 
 export const claimsService = {
@@ -13,6 +13,11 @@ export const claimsService = {
 
   getPolicyByNumber: async (policyNumber: string): Promise<Policy> => {
     const res = await api.get<Policy>(`/policies/${policyNumber}`);
+    return res.data;
+  },
+
+  createPolicy: async (payload: PolicyCreatePayload): Promise<Policy> => {
+    const res = await api.post<Policy>('/policies', payload);
     return res.data;
   },
 

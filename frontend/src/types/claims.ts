@@ -108,3 +108,15 @@ export interface ClaimCreatePayload {
   claimed_amount: number;
   bank_account_number?: string;
 }
+
+export interface PolicyCreatePayload {
+  policy_number?: string;
+  insured_name: string;
+  insured_document: string;
+  policy_type: PolicyType;
+  coverage_amount: number;
+  start_date: string;
+  end_date: string;
+  status?: PolicyStatus;
+  bank_account_number?: string;
+}

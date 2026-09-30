@@ -43,6 +43,17 @@ class PolicyResponse(BaseModel):
     status: PolicyStatus
     bank_account_number: Optional[str] = None
 
+class PolicyCreateRequest(BaseModel):
+    policy_number: Optional[str] = Field(None, example="POL-2026-9901")
+    insured_name: str = Field(..., example="Juan Carlos Pérez")
+    insured_document: str = Field(..., example="1712345678")
+    policy_type: PolicyType = Field(default=PolicyType.AUTO, example=PolicyType.AUTO)
+    coverage_amount: float = Field(..., example=25000.0)
+    start_date: date = Field(..., example="2026-01-01")
+    end_date: date = Field(..., example="2027-01-01")
+    status: PolicyStatus = Field(default=PolicyStatus.ACTIVE, example=PolicyStatus.ACTIVE)
+    bank_account_number: Optional[str] = Field(None, example="CTA-BNC-88019482")
+
 class LiquidateClaimRequest(BaseModel):
     bank_account_number: Optional[str] = Field(None, example="CTA-BNC-88019482")
     authorized_by: Optional[str] = Field(None, example="Lic. Carlos Analyst")

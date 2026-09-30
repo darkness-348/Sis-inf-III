@@ -28,6 +28,7 @@ class PolicyModel(Base):
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     status = Column(SQLEnum(PolicyStatus), default=PolicyStatus.ACTIVE, nullable=False)
+    bank_account_number = Column(String(50), default="CTA-BNC-88019482")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     claims = relationship("ClaimModel", back_populates="policy")
@@ -60,6 +61,8 @@ class ClaimModel(Base):
     adjuster_id = Column(Integer, ForeignKey("adjusters.id"), nullable=True)
     fraud_risk_level = Column(SQLEnum(FraudRiskLevel), default=FraudRiskLevel.LOW)
     authorized_payment_amount = Column(Float, nullable=True)
+    bank_account_number = Column(String(50), default="CTA-BNC-88019482")
+    liquidation_date = Column(DateTime, nullable=True)
 
     policy = relationship("PolicyModel", back_populates="claims")
     adjuster = relationship("AdjusterModel", back_populates="claims")

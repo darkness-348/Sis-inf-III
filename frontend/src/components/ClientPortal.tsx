@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ShieldCheck, AlertCircle, Search, PlusCircle, 
-  CheckCircle2, Clock, Calendar, MapPin, DollarSign, 
+import {
+  ShieldCheck, AlertCircle, Search, PlusCircle,
+  CheckCircle2, Clock, Calendar, MapPin, DollarSign,
   UserCheck, ArrowRight, RefreshCw, FileText
 } from 'lucide-react';
 import type { Claim } from '../types/claims';
@@ -32,15 +32,20 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
   }, [initialSubTab]);
 
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Selected claim for detail timeline
   const [selectedClaimId, setSelectedClaimId] = useState<number | null>(
     claims.length > 0 ? claims[0].id : null
   );
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const minDateStr = oneYearAgo.toISOString().split('T')[0];
+
   // New Claim Form state
   const [policyNumber, setPolicyNumber] = useState('POL-2026-8801');
-  const [incidentDate, setIncidentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [incidentDate, setIncidentDate] = useState(todayStr);
   const [incidentLocation, setIncidentLocation] = useState('');
   const [incidentDescription, setIncidentDescription] = useState('');
   const [claimedAmount, setClaimedAmount] = useState<number | ''>(2500);
@@ -48,6 +53,38 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Date validation check helper
+  const getDateValidationStatus = (dateStr: string) => {
+    if (!dateStr) return { isValid: true, message: null, isWarning: false };
+    if (dateStr > todayStr) {
+      return {
+        isValid: false,
+        message: 'La fecha del siniestro no puede ser futura. Seleccione la fecha de hoy o una fecha pasada.',
+        isWarning: false,
+      };
+    }
+    if (dateStr < minDateStr) {
+      return {
+        isValid: false,
+        message: 'No se pueden registrar siniestros con una antigüedad superior a 1 año (365 días).',
+        isWarning: false,
+      };
+    }
+    const selectedTime = new Date(dateStr + 'T00:00:00').getTime();
+    const todayTime = new Date(todayStr + 'T00:00:00').getTime();
+    const diffDays = Math.floor((todayTime - selectedTime) / (1000 * 60 * 60 * 24));
+    if (diffDays > 60) {
+      return {
+        isValid: true,
+        message: `⚠️ Atención: El siniestro ocurrió hace ${diffDays} días. Al registrarlo, el sistema lo marcará automáticamente con un FLAG (Sospecha / Revisión por reporte extemporáneo).`,
+        isWarning: true,
+      };
+    }
+    return { isValid: true, message: null, isWarning: false };
+  };
+
+  const dateStatus = getDateValidationStatus(incidentDate);
 
   // Filtered claims based on search query or policy
   const filteredClaims = claims.filter((c) => {
@@ -70,6 +107,11 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       return;
     }
 
+    if (!dateStatus.isValid) {
+      setError(dateStatus.message);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
@@ -87,14 +129,14 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       setIncidentDescription('');
       setIncidentLocation('');
       onRefresh();
-      
+
       // Select the newly created claim and switch to tracking tab
       setSelectedClaimId(newClaim.id);
       setTimeout(() => {
         setActiveSubTab('track');
       }, 1200);
     } catch (err: any) {
-      setError(err.message || 'Error al registrar el siniestro. Verifique el número de póliza.');
+      setError(err.message || 'Error al registrar el siniestro. Verifique el número de Póliza.');
     } finally {
       setLoading(false);
     }
@@ -123,24 +165,22 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '40px' }}>
-      {/* Welcome Banner */}
-      <div 
-        className="glass-panel" 
-        style={{ 
-          padding: '28px 32px', 
-          borderRadius: '16px',
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #1E3A8A 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+      {/* DineroLi Welcome Banner */}
+      <div
+        className="dineroli-banner"
+        style={{
+          padding: '28px 32px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '20px'
+
+
         }}
       >
         <div style={{ maxWidth: '720px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', borderRadius: '20px', background: 'rgba(37, 99, 235, 0.2)', border: '1px solid rgba(37, 99, 235, 0.4)', color: '#60A5FA', fontSize: '0.75rem', fontWeight: 700, marginBottom: '12px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', borderRadius: '20px', background: 'rgba(37, 99, 235, 0.2)', border: '1px solid rgba(37, 99, 235, 0.4)', color: '#6597FF', fontSize: '0.75rem', fontWeight: 700, marginBottom: '12px' }}>
             <ShieldCheck style={{ width: '14px', height: '14px' }} />
             <span>PORTAL DE AUTO-ATENCIÓN PARA CLIENTES Y ASEGURADOS</span>
           </div>
@@ -148,7 +188,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
             Bienvenido, {currentUser ? currentUser.full_name : 'Estimado Cliente'}
           </h2>
           <p style={{ fontSize: '0.9rem', color: '#94A3B8', marginTop: '8px', lineHeight: 1.5 }}>
-            Reporte un nuevo siniestro de manera ágil y realice el seguimiento en tiempo real del estado de liquidación de su póliza.
+            Reporte un nuevo siniestro de manera ágil y realice el seguimiento en tiempo real del estado de liquidación de su Póliza.
           </p>
         </div>
 
@@ -166,14 +206,14 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
             className="btn-secondary"
             style={{ padding: '12px 20px', fontSize: '0.875rem', borderRadius: '10px' }}
           >
-            <Search style={{ width: '18px', height: '18px', color: '#60A5FA' }} />
+            <Search style={{ width: '18px', height: '18px', color: '#6597FF' }} />
             <span>Consultar Mis Siniestros</span>
           </button>
         </div>
       </div>
 
       {/* Portal Navigation Sub-tabs */}
-      <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px' }}>
+      <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '12px' }}>
         <button
           onClick={() => setActiveSubTab('track')}
           style={{
@@ -186,7 +226,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            background: activeSubTab === 'track' ? '#2563EB' : 'rgba(255, 255, 255, 0.05)',
+            background: activeSubTab === 'track' ? '#236AFF' : 'rgba(255, 255, 255, 0.05)',
             color: activeSubTab === 'track' ? '#FFFFFF' : '#94A3B8',
             transition: 'all 0.2s'
           }}
@@ -207,7 +247,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            background: activeSubTab === 'report' ? '#2563EB' : 'rgba(255, 255, 255, 0.05)',
+            background: activeSubTab === 'report' ? '#236AFF' : 'rgba(255, 255, 255, 0.05)',
             color: activeSubTab === 'report' ? '#FFFFFF' : '#94A3B8',
             transition: 'all 0.2s'
           }}
@@ -243,7 +283,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                 type="text"
                 className="form-input"
                 style={{ paddingLeft: '38px', fontSize: '0.85rem' }}
-                placeholder="Buscar por código de siniestro (Ej: SIN-2026-0001) o número de póliza..."
+                placeholder="Buscar por código de siniestro (Ej: SIN-2026-0001) o número de Póliza..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -260,7 +300,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
               <FileText style={{ width: '48px', height: '48px', color: '#64748B', margin: '0 auto 16px auto' }} />
               <h3 style={{ fontSize: '1.1rem', color: '#F8FAFC', fontWeight: 700 }}>No hay siniestros registrados a su nombre</h3>
               <p style={{ fontSize: '0.85rem', color: '#94A3B8', marginTop: '6px', maxWidth: '500px', margin: '6px auto 20px auto' }}>
-                Si ha sufrido un evento o colisión cubierto por su póliza, puede reportarlo directamente utilizando nuestro formulario en línea.
+                Si ha sufrido un evento o colisión cubierto por su Póliza, puede reportarlo directamente utilizando nuestro formulario en línea.
               </p>
               <button onClick={() => setActiveSubTab('report')} className="btn-primary">
                 <PlusCircle style={{ width: '16px', height: '16px' }} />
@@ -274,7 +314,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                 <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Mis Siniestros Reportados ({filteredClaims.length})
                 </h3>
-                
+
                 {filteredClaims.map((claim) => {
                   const isSelected = activeClaim?.id === claim.id;
                   return (
@@ -286,8 +326,8 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                         padding: '16px',
                         cursor: 'pointer',
                         borderRadius: '12px',
-                        border: isSelected ? '2px solid #2563EB' : '1px solid rgba(255, 255, 255, 0.08)',
-                        background: isSelected ? 'rgba(37, 99, 235, 0.12)' : 'rgba(15, 23, 42, 0.6)',
+                        border: isSelected ? '2px solid #236AFF' : '1px solid rgba(255, 255, 255, 0.07)',
+                        background: isSelected ? 'rgba(35, 106, 255, 0.12)' : 'rgba(18, 20, 26, 0.75)',
                         transition: 'all 0.2s'
                       }}
                     >
@@ -313,11 +353,11 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
 
               {/* Selected Claim Main Tracking Detail */}
               {activeClaim && (
-                <div className="glass-panel" style={{ padding: '28px', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' }}>
+                <div className="glass-panel" style={{ padding: '28px', background: 'linear-gradient(145deg, rgba(18, 20, 26, 0.95) 0%, rgba(14, 16, 21, 0.95) 100%)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   {/* Claim Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '16px' }}>
                     <div>
-                      <span style={{ fontSize: '0.75rem', color: '#60A5FA', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#6597FF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         Expediente de Siniestro
                       </span>
                       <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#F8FAFC', marginTop: '2px' }}>
@@ -340,19 +380,19 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                   {/* VISUAL TIMELINE PROGRESS TRACKER (5 STAGES) */}
                   <div style={{ marginBottom: '32px', padding: '20px', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#E2E8F0', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Línea de Tiempo del Proceso de Liquidación
+                      Línea de Tiempo del Proceso de liquidación
                     </h3>
 
                     {/* Step Progress Line */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', position: 'relative' }}>
-                      
+
                       {/* Step 1 */}
                       <div style={{ textAlign: 'center' }}>
                         <div style={{
                           width: '36px',
                           height: '36px',
                           borderRadius: '50%',
-                          background: getProgressStep(activeClaim) >= 1 ? '#2563EB' : 'rgba(255, 255, 255, 0.1)',
+                          background: getProgressStep(activeClaim) >= 1 ? '#236AFF' : 'rgba(255, 255, 255, 0.1)',
                           color: '#FFFFFF',
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -360,8 +400,8 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                           fontWeight: 700,
                           fontSize: '0.9rem',
                           marginBottom: '8px',
-                          border: getProgressStep(activeClaim) >= 1 ? '2px solid #60A5FA' : 'none',
-                          boxShadow: getProgressStep(activeClaim) === 1 ? '0 0 15px rgba(37, 99, 235, 0.6)' : 'none'
+                          border: getProgressStep(activeClaim) >= 1 ? '2px solid #6597FF' : 'none',
+                          boxShadow: getProgressStep(activeClaim) >= 1 ? '0 0 14px rgba(35, 106, 255, 0.5)' : 'none'
                         }}>
                           {getProgressStep(activeClaim) > 1 ? <CheckCircle2 style={{ width: '18px', height: '18px' }} /> : '1'}
                         </div>
@@ -377,7 +417,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                           width: '36px',
                           height: '36px',
                           borderRadius: '50%',
-                          background: getProgressStep(activeClaim) >= 2 ? '#2563EB' : 'rgba(255, 255, 255, 0.1)',
+                          background: getProgressStep(activeClaim) >= 2 ? '#236AFF' : 'rgba(255, 255, 255, 0.1)',
                           color: '#FFFFFF',
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -385,8 +425,8 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                           fontWeight: 700,
                           fontSize: '0.9rem',
                           marginBottom: '8px',
-                          border: getProgressStep(activeClaim) >= 2 ? '2px solid #60A5FA' : 'none',
-                          boxShadow: getProgressStep(activeClaim) === 2 ? '0 0 15px rgba(37, 99, 235, 0.6)' : 'none'
+                          border: getProgressStep(activeClaim) >= 2 ? '2px solid #6597FF' : 'none',
+                          boxShadow: getProgressStep(activeClaim) >= 2 ? '0 0 14px rgba(35, 106, 255, 0.5)' : 'none'
                         }}>
                           {getProgressStep(activeClaim) > 2 ? <CheckCircle2 style={{ width: '18px', height: '18px' }} /> : '2'}
                         </div>
@@ -402,7 +442,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                           width: '36px',
                           height: '36px',
                           borderRadius: '50%',
-                          background: getProgressStep(activeClaim) >= 3 ? '#2563EB' : 'rgba(255, 255, 255, 0.1)',
+                          background: getProgressStep(activeClaim) >= 3 ? '#236AFF' : 'rgba(255, 255, 255, 0.1)',
                           color: '#FFFFFF',
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -410,8 +450,8 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                           fontWeight: 700,
                           fontSize: '0.9rem',
                           marginBottom: '8px',
-                          border: getProgressStep(activeClaim) >= 3 ? '2px solid #60A5FA' : 'none',
-                          boxShadow: getProgressStep(activeClaim) === 3 ? '0 0 15px rgba(37, 99, 235, 0.6)' : 'none'
+                          border: getProgressStep(activeClaim) >= 3 ? '2px solid #6597FF' : 'none',
+                          boxShadow: getProgressStep(activeClaim) >= 3 ? '0 0 14px rgba(35, 106, 255, 0.5)' : 'none'
                         }}>
                           {getProgressStep(activeClaim) > 3 ? <CheckCircle2 style={{ width: '18px', height: '18px' }} /> : '3'}
                         </div>
@@ -427,7 +467,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                           width: '36px',
                           height: '36px',
                           borderRadius: '50%',
-                          background: getProgressStep(activeClaim) >= 4 ? '#2563EB' : 'rgba(255, 255, 255, 0.1)',
+                          background: getProgressStep(activeClaim) >= 4 ? '#236AFF' : 'rgba(255, 255, 255, 0.1)',
                           color: '#FFFFFF',
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -435,8 +475,8 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                           fontWeight: 700,
                           fontSize: '0.9rem',
                           marginBottom: '8px',
-                          border: getProgressStep(activeClaim) >= 4 ? '2px solid #60A5FA' : 'none',
-                          boxShadow: getProgressStep(activeClaim) === 4 ? '0 0 15px rgba(37, 99, 235, 0.6)' : 'none'
+                          border: getProgressStep(activeClaim) >= 4 ? '2px solid #6597FF' : 'none',
+                          boxShadow: getProgressStep(activeClaim) >= 4 ? '0 0 14px rgba(35, 106, 255, 0.5)' : 'none'
                         }}>
                           {getProgressStep(activeClaim) > 4 ? <CheckCircle2 style={{ width: '18px', height: '18px' }} /> : '4'}
                         </div>
@@ -477,7 +517,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                   {/* Incident Details Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
                     <div className="glass-panel" style={{ padding: '18px', background: 'rgba(30, 41, 59, 0.4)' }}>
-                      <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#60A5FA', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#6597FF', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <MapPin style={{ width: '16px', height: '16px' }} />
                         Lugar y Descripción del Incidente
                       </h4>
@@ -520,6 +560,26 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                     </div>
                   )}
 
+                  {/* Liquidated Claim Official Receipt */}
+                  {activeClaim.status === 'LIQUIDATED' && (
+                    <div style={{ marginBottom: '20px', padding: '18px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+                      <h4 style={{ fontSize: '0.925rem', fontWeight: 800, color: '#34D399', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <CheckCircle2 style={{ width: '20px', height: '20px' }} />
+                        COMPROBANTE OFICIAL DE LIQUIDACIÓN Y PAGO
+                      </h4>
+                      <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.7)', border: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.85rem', color: '#F8FAFC', lineHeight: 1.6 }}>
+                        <p style={{ fontWeight: 700, color: '#6EE7B7', fontSize: '0.925rem', marginBottom: '8px' }}>
+                          {activeClaim.payment?.notes || `Cancelado la cantidad de $${(activeClaim.authorized_payment_amount || activeClaim.claimed_amount).toLocaleString()} USD al número de cuenta ${activeClaim.bank_account_number || 'CTA-BNC-88019482'} y la fecha de liquidación ${activeClaim.liquidation_date ? new Date(activeClaim.liquidation_date).toLocaleString() : '15/05/2026 11:30'}.`}
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '12px', fontSize: '0.775rem', color: '#CBD5E1', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '10px' }}>
+                          <div><strong>Nº Cuenta Acreditada:</strong> <span style={{ color: '#60A5FA' }}>{activeClaim.bank_account_number || 'CTA-BNC-88019482'}</span></div>
+                          <div><strong>Monto Liquidado:</strong> <span style={{ color: '#34D399' }}>${(activeClaim.authorized_payment_amount || activeClaim.claimed_amount).toLocaleString()} USD</span></div>
+                          <div><strong>Fecha de Liquidación:</strong> <span style={{ color: '#FCD34D' }}>{activeClaim.liquidation_date ? new Date(activeClaim.liquidation_date).toLocaleString() : '15/05/2026 11:30'}</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Documentation Attachment Action */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                     <p style={{ fontSize: '0.775rem', color: '#94A3B8' }}>
@@ -530,7 +590,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                       className="btn-secondary"
                       style={{ padding: '8px 16px', fontSize: '0.8rem' }}
                     >
-                      <FileText style={{ width: '14px', height: '14px', color: '#60A5FA' }} />
+                      <FileText style={{ width: '14px', height: '14px', color: '#6597FF' }} />
                       <span>Adjuntar Documentación Anexa</span>
                     </button>
                   </div>
@@ -544,10 +604,10 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
 
       {/* SUB-TAB 2: REPORT NEW CLAIM FORM */}
       {activeSubTab === 'report' && (
-        <div className="glass-panel" style={{ padding: '32px', maxWidth: '780px', margin: '0 auto', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
-          <div style={{ marginBottom: '24px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '16px' }}>
+        <div className="glass-panel" style={{ padding: '32px', maxWidth: '780px', margin: '0 auto', background: 'linear-gradient(145deg, rgba(18, 20, 26, 0.95) 0%, rgba(14, 16, 21, 0.95) 100%)', borderRadius: '16px', border: '1px solid rgba(35, 106, 255, 0.25)' }}>
+          <div style={{ marginBottom: '24px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '16px' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <PlusCircle style={{ width: '22px', height: '22px', color: '#2563EB' }} />
+              <PlusCircle style={{ width: '22px', height: '22px', color: '#236AFF' }} />
               Formulario de Declaración y Reporte de Siniestro
             </h3>
             <p style={{ fontSize: '0.825rem', color: '#94A3B8', marginTop: '4px' }}>
@@ -556,7 +616,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
           </div>
 
           <form onSubmit={handleReportClaim} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            
+
             <div>
               <label className="form-label">Número de Póliza Vigente *</label>
               <input
@@ -580,6 +640,8 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                   <input
                     type="date"
                     className="form-input"
+                    max={todayStr}
+                    min={minDateStr}
                     style={{ paddingLeft: '34px' }}
                     value={incidentDate}
                     onChange={(e) => setIncidentDate(e.target.value)}
@@ -606,6 +668,26 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Date Validation Alert Notice */}
+            {dateStatus.message && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: dateStatus.isWarning ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                  border: dateStatus.isWarning ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                  color: dateStatus.isWarning ? '#FCD34D' : '#FCA5A5',
+                }}
+              >
+                <span>{dateStatus.message}</span>
+              </div>
+            )}
 
             <div>
               <label className="form-label">Lugar o Dirección Exacta del Incidente *</label>
@@ -646,7 +728,7 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
               <button
                 type="submit"
                 className="btn-primary"
-                disabled={loading}
+                disabled={loading || !dateStatus.isValid}
                 style={{ padding: '10px 24px' }}
               >
                 {loading ? 'Registrando Expediente...' : 'Enviar Reporte de Siniestro'}

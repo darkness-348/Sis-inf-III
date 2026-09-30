@@ -25,6 +25,7 @@ class Policy:
     start_date: date
     end_date: date
     status: PolicyStatus
+    bank_account_number: Optional[str] = "CTA-BNC-88019482"
     created_at: Optional[datetime] = None
 
 @dataclass
@@ -93,6 +94,8 @@ class Claim:
     adjuster_id: Optional[int] = None
     fraud_risk_level: FraudRiskLevel = FraudRiskLevel.LOW
     authorized_payment_amount: Optional[float] = None
+    bank_account_number: Optional[str] = "CTA-BNC-88019482"
+    liquidation_date: Optional[datetime] = None
     assessment: Optional[DamageAssessment] = None
     fraud_analysis: Optional[FraudAnalysis] = None
     payment: Optional[PaymentAuthorization] = None

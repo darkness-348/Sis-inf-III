@@ -13,6 +13,7 @@ interface ClaimDetailModalProps {
   onClose: () => void;
   onRefresh: () => void;
   onOpenDocuments?: () => void;
+  currentUserRole?: string;
 }
 
 export const ClaimDetailModal: React.FC<ClaimDetailModalProps> = ({
@@ -21,6 +22,7 @@ export const ClaimDetailModal: React.FC<ClaimDetailModalProps> = ({
   onClose,
   onRefresh,
   onOpenDocuments,
+  currentUserRole,
 }) => {
   const [adjusters, setAdjusters] = useState<Adjuster[]>([]);
   const [selectedAdjusterId, setSelectedAdjusterId] = useState<number | ''>('');
@@ -30,6 +32,7 @@ export const ClaimDetailModal: React.FC<ClaimDetailModalProps> = ({
   const [laborCost, setLaborCost] = useState<number>(0);
 
   const [authorizedBy, setAuthorizedBy] = useState('Lic. Carlos Analyst');
+  const [bankAccount, setBankAccount] = useState('CTA-BNC-88019482');
   const [paymentNotes] = useState('');
 
   const [loadingAction, setLoadingAction] = useState(false);
@@ -49,6 +52,9 @@ export const ClaimDetailModal: React.FC<ClaimDetailModalProps> = ({
     } else if (claim) {
       setPartsCost(Math.round(claim.claimed_amount * 0.7));
       setLaborCost(Math.round(claim.claimed_amount * 0.3));
+    }
+    if (claim) {
+      setBankAccount(claim.bank_account_number || 'CTA-BNC-88019482');
     }
   }, [claim]);
 
@@ -107,7 +113,7 @@ export const ClaimDetailModal: React.FC<ClaimDetailModalProps> = ({
     setLoadingAction(true);
     setActionError(null);
     try {
-      await claimsService.liquidateClaim(claim.id, authorizedBy);
+      await claimsService.liquidateClaim(claim.id, authorizedBy, bankAccount);
       onRefresh();
     } catch (err: any) {
       setActionError(err.message);
@@ -225,126 +231,184 @@ export const ClaimDetailModal: React.FC<ClaimDetailModalProps> = ({
         </div>
 
         {/* Workflow Actions */}
-        <div className="glass-panel" style={{ padding: '20px', background: 'rgba(15, 23, 42, 0.6)' }}>
-          <h3 style={{ fontSize: '0.975rem', fontWeight: 700, color: 'white', marginBottom: '14px' }}>Procesamiento del Flujo de Trabajo</h3>
-
-          {/* Action 1: Assign Adjuster */}
-          {!claim.adjuster_id && (
-            <div style={{ marginBottom: '16px', padding: '14px', borderRadius: '8px', background: 'rgba(2, 132, 199, 0.08)', border: '1px solid rgba(2, 132, 199, 0.2)' }}>
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#38BDF8', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <UserCheck style={{ width: '16px', height: '16px' }} />
-                1. Asignación de Perito Ajustador (RF-04)
-              </h4>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <select
-                  className="form-input"
-                  value={selectedAdjusterId}
-                  onChange={(e) => setSelectedAdjusterId(Number(e.target.value))}
-                >
-                  <option value="">-- Seleccionar Perito Disponible --</option>
-                  {adjusters.map((adj) => (
-                    <option key={adj.id} value={adj.id}>
-                      {adj.full_name} ({adj.specialty}) - Carga: {adj.active_claims_count} asignados
-                    </option>
-                  ))}
-                </select>
-                <button onClick={handleAssignAdjuster} className="btn-primary" disabled={loadingAction || !selectedAdjusterId}>
-                  Asignar Perito
+        {currentUserRole === 'CLIENT' ? (
+          <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(37, 99, 235, 0.25)' }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#60A5FA', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle2 style={{ width: '18px', height: '18px', color: '#10B981' }} />
+              Estado de su Expediente de Asegurado
+            </h4>
+            <p style={{ fontSize: '0.825rem', color: '#CBD5E1', marginTop: '6px', lineHeight: 1.6 }}>
+              Su siniestro está siendo procesado de conformidad con su póliza de seguro. Nuestro equipo pericial y legal se encuentra realizando las evaluaciones correspondientes. Podrá consultar los avances y anexar documentos en cualquier momento.
+            </p>
+            {onOpenDocuments && (
+              <div style={{ marginTop: '14px' }}>
+                <button onClick={onOpenDocuments} className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem' }}>
+                  <FileSpreadsheet style={{ width: '15px', height: '15px' }} />
+                  <span>Ver y Adjuntar Documentos del Siniestro</span>
                 </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        ) : (
+          <div className="glass-panel" style={{ padding: '20px', background: 'rgba(15, 23, 42, 0.6)' }}>
+            <h3 style={{ fontSize: '0.975rem', fontWeight: 700, color: 'white', marginBottom: '14px' }}>
+              Procesamiento del Flujo de Trabajo (Operaciones Internas)
+            </h3>
 
-          {/* Action 2: Damage Assessment Form */}
-          {claim.adjuster_id && !claim.assessment && (
-            <div style={{ marginBottom: '16px', padding: '14px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FCD34D', marginBottom: '8px' }}>
-                2. Informe Técnico y Evaluación de Daños (RF-04)
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                <div>
-                  <label className="form-label">Repuestos ($)</label>
-                  <input type="number" className="form-input" value={partsCost} onChange={(e) => setPartsCost(Number(e.target.value))} />
-                </div>
-                <div>
-                  <label className="form-label">Mano de Obra ($)</label>
-                  <input type="number" className="form-input" value={laborCost} onChange={(e) => setLaborCost(Number(e.target.value))} />
-                </div>
-                <div>
-                  <label className="form-label">Total Avalado ($)</label>
-                  <input type="number" className="form-input" value={estimatedTotal} readOnly style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#34D399', fontWeight: 700 }} />
+            {/* Action 1: Assign Adjuster (Solo Analistas, Supervisores, Directores o Admin) */}
+            {!claim.adjuster_id && currentUserRole !== 'ADJUSTER' && (
+              <div style={{ marginBottom: '16px', padding: '14px', borderRadius: '8px', background: 'rgba(2, 132, 199, 0.08)', border: '1px solid rgba(2, 132, 199, 0.2)' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#38BDF8', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <UserCheck style={{ width: '16px', height: '16px' }} />
+                  1. Asignación de Perito Ajustador (RF-04)
+                </h4>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <select
+                    className="form-input"
+                    value={selectedAdjusterId}
+                    onChange={(e) => setSelectedAdjusterId(Number(e.target.value))}
+                  >
+                    <option value="">-- Seleccionar Perito Disponible --</option>
+                    {adjusters.map((adj) => (
+                      <option key={adj.id} value={adj.id}>
+                        {adj.full_name} ({adj.specialty}) - Carga: {adj.active_claims_count} asignados
+                      </option>
+                    ))}
+                  </select>
+                  <button onClick={handleAssignAdjuster} className="btn-primary" disabled={loadingAction || !selectedAdjusterId}>
+                    Asignar Perito
+                  </button>
                 </div>
               </div>
-              <div style={{ marginBottom: '10px' }}>
-                <label className="form-label">Dictamen Técnico del Perito</label>
-                <textarea className="form-input" rows={2} value={assessmentDesc} onChange={(e) => setAssessmentDesc(e.target.value)} placeholder="Detalle técnico de la inspección..." />
-              </div>
-              <button onClick={handleSaveAssessment} className="btn-primary" disabled={loadingAction}>
-                Guardar Evaluación de Daños
-              </button>
-            </div>
-          )}
+            )}
 
-          {/* Registered Assessment */}
-          {claim.assessment && (
-            <div style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FCD34D', marginBottom: '4px' }}>Evaluación Pericial Registrada</h4>
-              <p style={{ fontSize: '0.8rem', color: '#CBD5E1' }}>{claim.assessment.description}</p>
-              <div style={{ display: 'flex', gap: '16px', marginTop: '6px', fontSize: '0.775rem', color: '#94A3B8' }}>
-                <span>Repuestos: ${claim.assessment.parts_cost.toLocaleString()}</span>
-                <span>Mano de obra: ${claim.assessment.labor_cost.toLocaleString()}</span>
-                <strong style={{ color: '#34D399' }}>Total Peritado: ${claim.assessment.estimated_cost.toLocaleString()} USD</strong>
+            {/* Action 2: Damage Assessment Form (Solo Peritos, Supervisores o Admin) */}
+            {claim.adjuster_id && !claim.assessment && (currentUserRole === 'ADJUSTER' || currentUserRole === 'SUPERVISOR' || currentUserRole === 'DIRECTOR' || currentUserRole === 'ADMIN') && (
+              <div style={{ marginBottom: '16px', padding: '14px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FCD34D', marginBottom: '8px' }}>
+                  2. Informe Técnico y Evaluación de Daños (RF-04)
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                  <div>
+                    <label className="form-label">Repuestos ($)</label>
+                    <input type="number" className="form-input" value={partsCost} onChange={(e) => setPartsCost(Number(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="form-label">Mano de Obra ($)</label>
+                    <input type="number" className="form-input" value={laborCost} onChange={(e) => setLaborCost(Number(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="form-label">Total Avalado ($)</label>
+                    <input type="number" className="form-input" value={estimatedTotal} readOnly style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#34D399', fontWeight: 700 }} />
+                  </div>
+                </div>
+                <div style={{ marginBottom: '10px' }}>
+                  <label className="form-label">Dictamen Técnico del Perito</label>
+                  <textarea className="form-input" rows={2} value={assessmentDesc} onChange={(e) => setAssessmentDesc(e.target.value)} placeholder="Detalle técnico de la inspección..." />
+                </div>
+                <button onClick={handleSaveAssessment} className="btn-primary" disabled={loadingAction}>
+                  Guardar Evaluación de Daños
+                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Action 3: Payment Approval according to Hierarchy */}
-          {claim.status !== 'APPROVED' && claim.status !== 'LIQUIDATED' && claim.status !== 'FRAUD_FLAGGED' && (
-            <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#34D399', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Award style={{ width: '16px', height: '16px' }} />
-                3. Autorización de Pago por Nivel de Jerarquía (RF-05 / RF-07)
-              </h4>
-              <p style={{ fontSize: '0.775rem', color: '#94A3B8', marginBottom: '10px' }}>
-                Monto a autorizar: <strong>${(claim.assessment ? claim.assessment.estimated_cost : claim.claimed_amount).toLocaleString()} USD</strong> —
-                {(claim.assessment ? claim.assessment.estimated_cost : claim.claimed_amount) <= 5000 ? (
-                  <span style={{ color: '#60A5FA', fontWeight: 700 }}> Requiere Aprobación: Analista Junior (&lt; $5,000)</span>
-                ) : (claim.assessment ? claim.assessment.estimated_cost : claim.claimed_amount) <= 25000 ? (
-                  <span style={{ color: '#FCD34D', fontWeight: 700 }}> Requiere Aprobación: Supervisor Senior (&lt; $25,000)</span>
+            {/* Registered Assessment */}
+            {claim.assessment && (
+              <div style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FCD34D', marginBottom: '4px' }}>Evaluación Pericial Registrada</h4>
+                <p style={{ fontSize: '0.8rem', color: '#CBD5E1' }}>{claim.assessment.description}</p>
+                <div style={{ display: 'flex', gap: '16px', marginTop: '6px', fontSize: '0.775rem', color: '#94A3B8' }}>
+                  <span>Repuestos: ${claim.assessment.parts_cost.toLocaleString()}</span>
+                  <span>Mano de obra: ${claim.assessment.labor_cost.toLocaleString()}</span>
+                  <strong style={{ color: '#34D399' }}>Total Peritado: ${claim.assessment.estimated_cost.toLocaleString()} USD</strong>
+                </div>
+              </div>
+            )}
+
+            {/* Action 3: Payment Approval according to Hierarchy (No visible para Peritos) */}
+            {claim.status !== 'APPROVED' && claim.status !== 'LIQUIDATED' && claim.status !== 'FRAUD_FLAGGED' && currentUserRole !== 'ADJUSTER' && (
+              <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#34D399', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Award style={{ width: '16px', height: '16px' }} />
+                  3. Autorización de Pago por Nivel de Jerarquía (RF-05 / RF-07)
+                </h4>
+                <p style={{ fontSize: '0.775rem', color: '#94A3B8', marginBottom: '10px' }}>
+                  Monto a autorizar: <strong>${(claim.assessment ? claim.assessment.estimated_cost : claim.claimed_amount).toLocaleString()} USD</strong> —
+                  {(claim.assessment ? claim.assessment.estimated_cost : claim.claimed_amount) <= 5000 ? (
+                    <span style={{ color: '#60A5FA', fontWeight: 700 }}> Requiere Aprobación: Analista Junior (&lt; $5,000)</span>
+                  ) : (claim.assessment ? claim.assessment.estimated_cost : claim.claimed_amount) <= 25000 ? (
+                    <span style={{ color: '#FCD34D', fontWeight: 700 }}> Requiere Aprobación: Supervisor Senior (&lt; $25,000)</span>
+                  ) : (
+                    <span style={{ color: '#FCA5A5', fontWeight: 700 }}> Requiere Aprobación: Director Ejecutivo (&gt; $25,000)</span>
+                  )}
+                </p>
+
+                {currentUserRole === 'ANALYST' && (claim.assessment ? claim.assessment.estimated_cost : claim.claimed_amount) > 5000 ? (
+                  <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#FCA5A5', fontSize: '0.775rem' }}>
+                    ⚠️ Este monto supera su límite jerárquico de Analista ($5,000 USD). Debe ser aprobado por un <strong>Supervisor Senior</strong> o <strong>Director Ejecutivo</strong>.
+                  </div>
                 ) : (
-                  <span style={{ color: '#FCA5A5', fontWeight: 700 }}> Requiere Aprobación: Director Ejecutivo (&gt; $25,000)</span>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Nombre de la Autoridad Aprobadora"
+                      value={authorizedBy}
+                      onChange={(e) => setAuthorizedBy(e.target.value)}
+                    />
+                    <button onClick={handleAuthorizePayment} className="btn-primary" disabled={loadingAction}>
+                      <CheckCircle2 style={{ width: '15px', height: '15px' }} />
+                      <span>Autorizar Pago</span>
+                    </button>
+                  </div>
                 )}
-              </p>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Nombre de la Autoridad Aprobadora"
-                  value={authorizedBy}
-                  onChange={(e) => setAuthorizedBy(e.target.value)}
-                />
-                <button onClick={handleAuthorizePayment} className="btn-primary" disabled={loadingAction}>
-                  <CheckCircle2 style={{ width: '15px', height: '15px' }} />
-                  <span>Autorizar Pago</span>
-                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Action 4: Final Liquidation */}
-          {claim.status === 'APPROVED' && (
-            <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#34D399' }}>Generación de Orden de Pago y Liquidación (RF-10)</h4>
-                <p style={{ fontSize: '0.775rem', color: '#CBD5E1' }}>Pago autorizado por ${claim.authorized_payment_amount?.toLocaleString()} USD. Envío de solicitud a Finanzas.</p>
+            {/* Action 4: Final Liquidation (Solo Supervisores, Directores o Admin) */}
+            {claim.status === 'APPROVED' && (currentUserRole === 'SUPERVISOR' || currentUserRole === 'DIRECTOR' || currentUserRole === 'ADMIN') && (
+              <div style={{ padding: '16px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#34D399' }}>Generación de Orden de Pago y Liquidación (RF-10)</h4>
+                  <p style={{ fontSize: '0.775rem', color: '#CBD5E1' }}>Monto a liquidar: <strong>${(claim.authorized_payment_amount || claim.claimed_amount).toLocaleString()} USD</strong>. Ingrese el número de cuenta bancaria del cliente para registrar el comprobante.</p>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Número de Cuenta Bancaria (Ej: CTA-BNC-88019482)"
+                    value={bankAccount}
+                    onChange={(e) => setBankAccount(e.target.value)}
+                  />
+                  <button onClick={handleLiquidate} className="btn-primary" style={{ background: '#10B981', whiteSpace: 'nowrap' }} disabled={loadingAction}>
+                    <DollarSign style={{ width: '16px', height: '16px' }} />
+                    <span>Efectuar Liquidación a Finanzas</span>
+                  </button>
+                </div>
               </div>
-              <button onClick={handleLiquidate} className="btn-primary" style={{ background: '#10B981' }} disabled={loadingAction}>
-                <DollarSign style={{ width: '16px', height: '16px' }} />
-                <span>Efectuar Liquidación a Finanzas</span>
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+
+            {/* Official Liquidation Receipt Voucher */}
+            {claim.status === 'LIQUIDATED' && (
+              <div style={{ padding: '18px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+                <h4 style={{ fontSize: '0.925rem', fontWeight: 800, color: '#34D399', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <CheckCircle2 style={{ width: '20px', height: '20px' }} />
+                  COMPROBANTE OFICIAL DE LIQUIDACIÓN Y PAGO
+                </h4>
+                <div style={{ padding: '14px', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.7)', border: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.85rem', color: '#F8FAFC', lineHeight: 1.6 }}>
+                  <p style={{ fontWeight: 700, color: '#6EE7B7', fontSize: '0.925rem', marginBottom: '8px' }}>
+                    {claim.payment?.notes || `Cancelado la cantidad de $${(claim.authorized_payment_amount || claim.claimed_amount).toLocaleString()} USD al número de cuenta ${claim.bank_account_number || 'CTA-BNC-88019482'} y la fecha de liquidación ${claim.liquidation_date ? new Date(claim.liquidation_date).toLocaleString() : '15/05/2026 11:30'}.`}
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '12px', fontSize: '0.775rem', color: '#CBD5E1', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '10px' }}>
+                    <div><strong>Nº Cuenta Cliente:</strong> <span style={{ color: '#60A5FA' }}>{claim.bank_account_number || 'CTA-BNC-88019482'}</span></div>
+                    <div><strong>Monto Liquidado:</strong> <span style={{ color: '#34D399' }}>${(claim.authorized_payment_amount || claim.claimed_amount).toLocaleString()} USD</span></div>
+                    <div><strong>Fecha Liquidación:</strong> <span style={{ color: '#FCD34D' }}>{claim.liquidation_date ? new Date(claim.liquidation_date).toLocaleString() : '15/05/2026 11:30'}</span></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
     </div>

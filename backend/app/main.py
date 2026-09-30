@@ -5,6 +5,7 @@ import time
 import logging
 
 from app.infrastructure.database import Base, engine
+from app.infrastructure import models  # Register models in SQLAlchemy metadata
 from app.presentation.controllers import policy_controller, adjuster_controller, claim_controller, auth_controller
 from app.domain.exceptions import DomainException
 

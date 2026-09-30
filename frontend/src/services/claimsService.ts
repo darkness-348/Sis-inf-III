@@ -79,9 +79,14 @@ export const claimsService = {
     return res.data;
   },
 
-  liquidateClaim: async (claimId: number, authorizedBy: string = 'Oficial de Liquidación'): Promise<Claim> => {
-    const res = await api.post<Claim>(`/claims/${claimId}/liquidate`, null, {
-      params: { authorized_by: authorizedBy },
+  liquidateClaim: async (
+    claimId: number,
+    authorizedBy: string = 'Oficial de Liquidación',
+    bankAccountNumber?: string
+  ): Promise<Claim> => {
+    const res = await api.post<Claim>(`/claims/${claimId}/liquidate`, {
+      authorized_by: authorizedBy,
+      bank_account_number: bankAccountNumber,
     });
     return res.data;
   },

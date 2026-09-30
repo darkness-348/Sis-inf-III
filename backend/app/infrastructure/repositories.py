@@ -74,6 +74,7 @@ class PolicyRepository(IPolicyRepository):
             start_date=model.start_date,
             end_date=model.end_date,
             status=model.status,
+            bank_account_number=model.bank_account_number,
             created_at=model.created_at
         )
 
@@ -90,6 +91,7 @@ class PolicyRepository(IPolicyRepository):
                 start_date=m.start_date,
                 end_date=m.end_date,
                 status=m.status,
+                bank_account_number=m.bank_account_number,
                 created_at=m.created_at
             ) for m in models
         ]
@@ -103,7 +105,8 @@ class PolicyRepository(IPolicyRepository):
             coverage_amount=policy.coverage_amount,
             start_date=policy.start_date,
             end_date=policy.end_date,
-            status=policy.status
+            status=policy.status,
+            bank_account_number=policy.bank_account_number
         )
         self.db.add(model)
         self.db.commit()
@@ -213,6 +216,8 @@ class ClaimRepository(IClaimRepository):
             adjuster_id=model.adjuster_id,
             fraud_risk_level=model.fraud_risk_level,
             authorized_payment_amount=model.authorized_payment_amount,
+            bank_account_number=model.bank_account_number,
+            liquidation_date=model.liquidation_date,
             assessment=assessment,
             fraud_analysis=fraud_analysis,
             payment=payment
@@ -230,7 +235,10 @@ class ClaimRepository(IClaimRepository):
             status=claim.status,
             created_at=claim.created_at or datetime.now(),
             adjuster_id=claim.adjuster_id,
-            fraud_risk_level=claim.fraud_risk_level
+            fraud_risk_level=claim.fraud_risk_level,
+            authorized_payment_amount=claim.authorized_payment_amount,
+            bank_account_number=claim.bank_account_number,
+            liquidation_date=claim.liquidation_date
         )
         self.db.add(model)
         self.db.commit()
@@ -245,6 +253,11 @@ class ClaimRepository(IClaimRepository):
             model.adjuster_id = claim.adjuster_id
             model.fraud_risk_level = claim.fraud_risk_level
             model.authorized_payment_amount = claim.authorized_payment_amount
+            model.bank_account_number = claim.bank_account_number
+            model.liquidation_date = claim.liquidation_date
+            if claim.payment and model.payment:
+                model.payment.status = claim.payment.status
+                model.payment.notes = claim.payment.notes
             self.db.commit()
             self.db.refresh(model)
         return self._to_entity(model)

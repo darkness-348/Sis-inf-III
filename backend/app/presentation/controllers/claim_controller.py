@@ -9,7 +9,8 @@ from app.application.use_cases.fraud_use_cases import FraudEngineUseCases
 from app.presentation.schemas.api_schemas import (
     ClaimCreateRequest, ClaimResponse, AssignAdjusterRequest,
     DamageAssessmentRequest, PaymentAuthorizationRequest,
-    PaymentAuthorizationResponse, FraudAnalysisResponse, DashboardMetricsResponse
+    PaymentAuthorizationResponse, FraudAnalysisResponse, DashboardMetricsResponse,
+    LiquidateClaimRequest
 )
 from app.presentation.controllers.auth_controller import get_current_user
 from app.domain.entities import User
@@ -129,12 +130,15 @@ def authorize_payment(
 @router.post("/{claim_id}/liquidate", response_model=ClaimResponse)
 def liquidate_claim(
     claim_id: int, 
+    req: LiquidateClaimRequest = None,
     authorized_by: str = "Oficial de Liquidación", 
+    bank_account_number: str = None,
     payment_cases: PaymentUseCases = Depends(get_payment_use_cases),
     current_user: User = Depends(get_current_user)
 ):
     try:
-        user_name = current_user.full_name if current_user else authorized_by
-        return payment_cases.liquidate_claim(claim_id, user_name)
+        user_name = (req.authorized_by if req and req.authorized_by else None) or (current_user.full_name if current_user else authorized_by)
+        acct_num = (req.bank_account_number if req and req.bank_account_number else None) or bank_account_number
+        return payment_cases.liquidate_claim(claim_id, user_name, bank_account_number=acct_num)
     except DomainException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

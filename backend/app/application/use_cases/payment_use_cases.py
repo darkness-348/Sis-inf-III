@@ -50,7 +50,7 @@ class PaymentUseCases:
 
         return saved_payment
 
-    def liquidate_claim(self, claim_id: int, user_officer: str) -> Claim:
+    def liquidate_claim(self, claim_id: int, user_officer: str, bank_account_number: str = None) -> Claim:
         claim = self.claim_repo.get_by_id(claim_id)
         if not claim:
             raise ClaimNotFoundException(claim_id)
@@ -58,8 +58,22 @@ class PaymentUseCases:
         if claim.status != ClaimStatus.APPROVED:
             raise InvalidApprovalException("El siniestro debe estar en estado APROBADO antes de efectuar la liquidación final.")
 
+        now_dt = datetime.now()
         claim.status = ClaimStatus.LIQUIDATED
+        claim.liquidation_date = now_dt
+        if bank_account_number and bank_account_number.strip():
+            claim.bank_account_number = bank_account_number.strip()
+        elif not claim.bank_account_number:
+            claim.bank_account_number = "CTA-BNC-88019482"
+
+        amount_val = claim.authorized_payment_amount or (claim.assessment.estimated_cost if claim.assessment else claim.claimed_amount)
+        formatted_amount = f"${amount_val:,.2f} USD"
+        date_str = now_dt.strftime("%d/%m/%Y %H:%M")
+        receipt_msg = f"Cancelado la cantidad de {formatted_amount} al número de cuenta {claim.bank_account_number} y la fecha de liquidación {date_str}."
+
         if claim.payment:
             claim.payment.status = "PAID"
+            claim.payment.notes = receipt_msg
 
         return self.claim_repo.update(claim)
+

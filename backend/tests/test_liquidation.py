@@ -4,7 +4,7 @@ from app.infrastructure.database import SessionLocal, Base, engine
 from app.infrastructure.models import PolicyModel, ClaimModel, PaymentAuthorizationModel, UserModel
 from app.domain.enums import PolicyStatus, ClaimStatus, FraudRiskLevel, ApprovalLevel, PolicyType, UserRole
 from app.infrastructure.repositories import ClaimRepository, PolicyRepository
-from app.use_cases.payment_use_cases import PaymentUseCases
+from app.application.use_cases.payment_use_cases import PaymentUseCases
 
 @pytest.fixture(autouse=True)
 def db_session():
